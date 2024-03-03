@@ -69,6 +69,21 @@ class Motif:
         self.gene_name = gene_name
 
     #def draw function
+        
+class ygcy:
+    def __init__(self, start, end, gene):
+        self.start = start
+        self.end = end
+        self.gene = gene
+
+
+    def ygcy_draw(self, x, y, start, end):
+        context.set_line_width(10)
+        context.set_source_rgba(0.2, 0.5, 0.7, 1)
+        context.move_to(x + start, y)
+        context.line_to(start + 4, y)
+        context.stroke()
+        context.set_source_rgba(0, 0, 0, 1)
  
 
 class Gene:
@@ -91,18 +106,32 @@ class Gene:
 
 
 class Exon:
-    def __init__(self, start, end, colot, gene):
-        self.name = name
-        self.length = length
+    def __init__(self, start, end, gene):
+        self.start = start
+        self.end = end
+        self.gene = gene
 
-    #def draw function
+
+    def exon_draw(self, x, y, start, end, exon_length):
+        context.set_line_width(10)
+        context.set_source_rgba(0.5, 0.5, 0.5, 1)
+        context.move_to(x + start, y)
+        context.line_to(end + exon_length, y)
+        context.stroke()
+        context.set_source_rgba(0, 0, 0, 1)
         
 class Intron:
-    def __init__(self, start, end, colot, gene):
-        self.name = name
-        self.length = length
-
-    #def draw function (self, x = int, y = int, exon_len = int)
+    def __init__(self, start, end, gene):
+        self.start = start
+        self.end = end
+        self.gene = gene
+    def intron_draw(self, x, y, intron_length):
+        context.set_line_width(10)
+        context.set_source_rgba(0.7, 0.7, 0.7, 1)
+        context.move_to(x, y)
+        context.line_to(x + intron_length, y)
+        context.stroke()
+        context.set_source_rgba(0, 0, 0, 1)
 
 
 with open(ol, 'r') as fasta:
@@ -116,17 +145,78 @@ with open(ol, 'r') as fasta:
         gene_length = len(sequence[0])
         #add gene to class
         newgene = Gene(header[0][1:], gene_length)
+
+        print(f'the gene length is: {gene_length}')
         
         #draw gene action
         newgene.gene_draw(20, 50+i, header[0][1:], gene_length)
 
         #extract exon by grabbing all capital letters
-        #calculate exon length
+        Exon_pattern = re.compile("[AGCT]")
+        exons = Exon_pattern.findall(sequence[0])
+
+
+        # Find the exon using a regular expression
+        exons_string = ''.join(exons)
+        sequence = ''.join(sequence)
+        match = re.search('[A-Z]+', sequence)
+
+        if match:
+            uppercase_section = match.group()  # Get the uppercase section
+            exon_start = match.start()  # Get the start position of the uppercase section
+            exon_end = match.end()
+
+        else:
+            pass
+            #print("No uppercase section found in the sequence.")
+        
+        if exons:
+            exon_length = len(exons)
+            print("Exon length:", exon_length)
+        else:
+            pass
+            #print("No exons found in the sequence.")
 
         #add exon to class
+        new_exon = Exon(exon_start, exon_end, newgene)
 
+        new_exon.exon_draw(20, 50+i, exon_start, exon_end, exon_length)
 
         #compile motif with regex
+        #ygcy_pattern = re.compile("(t|c)g(c|t|c)")
+        ygcy_pattern = re.compile("[t|cgct|c]")
+        ygcys = ygcy_pattern.findall(sequence[0])
+
+
+        # Find the exon using a regular expression
+        ygcys_string = ''.join(ygcys)
+        #ygcy_match = re.search('(t|c)g(c|t|c)', sequence)
+        ygcy_match = re.search('[t|c]gc[t|c]', sequence)
+
+
+        if ygcy_match:
+            ygcy_section = ygcy_match.group()  # Get the uppercase section
+            ygcy_start = ygcy_match.start()  # Get the start position of the uppercase section
+            ygcy_end = ygcy_match.end()
+            print(ygcy_start)
+            print(ygcy_end)
+        else:
+            print("No uppercase section found in the sequence.")
+        
+        if ygcys:
+            ygcy_length = len(ygcys_string)
+            print("ygcy length:", ygcy_length)
+            new_ygcy = ygcy(ygcy_start, ygcy_end, newgene)
+
+            new_ygcy.ygcy_draw(20, 50+i, ygcy_start, ygcy_end)
+        else:
+            print("No ygcys found in the sequence.")
+
+        #add ygcy to class
+        #new_ygcy = ygcy(ygcy_start, ygcy_end, newgene)
+
+        #new_ygcy.ygcy_draw(20, 50+i, ygcy_end, ygcy_end, ygcy_length)
+
         #m.span 
 
         i+=100
