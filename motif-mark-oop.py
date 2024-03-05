@@ -14,6 +14,41 @@ context = cairo.Context(surface)
 
 #set_custom_palette_color(index: int, red: float, green: float, blue: float, alpha: float)→ None
 
+
+# Set up variables for legend
+legend_x = 50
+legend_y = 450
+legend_spacing = 20
+legend_font_size = 12
+
+# Define legend labels and colors
+legend_items = [("ygcy", (255, 0, 0)),
+                ("GCAUG", (0, 255, 0)),   
+                ("catag", (0, 0, 255)),
+                ("YYYYYYYYYY", (0, 102, 102)),
+                ("Exon", (0, 0, 0)),]   
+
+# Draw legend
+for label, color in legend_items:
+    # Draw colored square
+    context.set_source_rgb(*color)
+    context.rectangle(legend_x, legend_y, 10, 10)
+    context.fill()
+
+    # Draw legend label
+    context.set_source_rgb(0, 0, 0)  # Set text color to black
+    context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+    context.set_font_size(legend_font_size)
+    context.move_to(legend_x + 15, legend_y + 8)
+    context.show_text(label)
+
+    # Move to the next legend item
+    legend_y += legend_spacing
+
+# Save the surface to a PNG file
+surface.write_to_png("legend.png")
+
+
 def get_args():
     parser= argparse.ArgumentParser()
     parser.add_argument("-f", "--fasta", help="Fasta file", required=True, type = str)
@@ -100,9 +135,9 @@ class Motif:
         self.gene_name = gene_name
 
     #def draw function
-    def motif_draw(self, x, y, name, length, start, end):
+    def motif_draw(self, x, y, name, length, start, end, color):
         context.set_line_width(10)
-        context.set_source_rgb(0, 255, 0)
+        context.set_source_rgb(*color)
         context.move_to(x + start, y)
         context.line_to(x + end, y)
         context.stroke()
@@ -120,7 +155,7 @@ class Gene:
         context.line_to(x + gene_length, y)
         context.stroke()
         context.set_source_rgba(0, 0, 0, 1)
-        context.move_to(x+10, y+10)
+        context.move_to(x+10, y+15)
         context.show_text(name)
         context.stroke()
 
@@ -134,7 +169,7 @@ class Exon:
 
     def exon_draw(self, x, y, start, end, exon_length):
         context.set_line_width(10)
-        context.set_source_rgba(0.5, 0.5, 0.5, 1)
+        context.set_source_rgb(0, 0, 0)
         context.move_to(x + start, y)
         context.line_to(end + exon_length, y)
         context.stroke()
@@ -192,31 +227,22 @@ with open(ol, 'r') as fasta:
         new_exon = Exon(exon_start, exon_end, newgene)
         new_exon.exon_draw(20, 50+i, exon_start, exon_end, exon_length)
 
+        color_index = 0
         for m in motif_dict:
             converted_motif = convert_motif(m)
             upper_seq = sequence.upper()
             match_motif = re.finditer(converted_motif, upper_seq)
+            
+            
+            previous_length = 4
             for match in match_motif:
-                new_motif = Motif(m, motif_dict[m], [0, 0.2, 0.2, 1], match.start())
-                new_motif.motif_draw(20, 42+i, m, motif_dict[m], match.start(), match.end())
-                print(new_motif.length)
+                new_motif = Motif(m, motif_dict[m], color_list[color_index], match.start())
+                new_motif.motif_draw(20, 42+i, m, motif_dict[m], match.start(), match.end(), color_list[color_index])
+                if  new_motif.length != previous_length:
+                    color_index += 1
+                    print("doing th thing")
+                previous_length = new_motif.length
+                #print(new_motif.length)
 
-            
-
-
-        #compile motif with regex
-        
-
-
-        #add ygcy to class
-        
-        
-            
-        
-        #new_ygcy = ygcy(ygcy_start, ygcy_end, newgene)
-
-        #new_ygcy.ygcy_draw(20, 50+i, ygcy_end, ygcy_end, ygcy_length)
-
-        #m.span 
 
         i+=100
