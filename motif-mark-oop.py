@@ -12,8 +12,6 @@ surface = cairo.PDFSurface("test.pdf", width, height)
 
 context = cairo.Context(surface)
 
-#set_custom_palette_color(index: int, red: float, green: float, blue: float, alpha: float)→ None
-
 
 # Set up variables for legend
 legend_x = 50
@@ -53,7 +51,7 @@ def get_args():
     parser= argparse.ArgumentParser()
     parser.add_argument("-f", "--fasta", help="Fasta file", required=True, type = str)
     parser.add_argument("-m", "--motif", help="Motif file", required=True, type = str)
-    parser.add_argument("-w", "--write", help="Output file", required=True, type = str)
+    parser.add_argument("-w", "--write", help="Output file", required=False, type = str)
     parser.add_argument("-ol", "--oneline", help="Oneline fasta intermediate file", required=False, type = str)
 
     return parser.parse_args()
@@ -61,8 +59,8 @@ def get_args():
 args = get_args()
 f=args.fasta
 m=args.motif
-w=args.write
-ol=args.oneline
+#w=args.write
+#ol=args.oneline
 
 motif_reg_dict = {}
 motif_reg_dict = {
@@ -85,6 +83,9 @@ motif_reg_dict = {
     }
 
 color_list = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 102, 102), (153, 0, 153)]
+motif_color_dict = {}
+
+
 
 
 def convert_motif(string): 
@@ -96,19 +97,32 @@ def convert_motif(string):
     
 
 motif_dict = {}
+motif_list = []
 with open(m, "r") as motifs:
     while True:
         line  = motifs.readline().strip()
         if (line == ""):
             break
-        print(line)
+        motif_list.append(line.upper())
         motif_dict[line] = len(line)
 
-        # match_motif = re.findall(r'([c|t]gc[c|t])', line)
-        # match_gene_name = re.findall(r'>([A-Za-z0-9]+)', line)
+motif_colors = color_list[0:len(motif_list)]
+print(motif_colors)
+
+c = 0
+
+for i in range(0,len(motif_list)):
+    if not motif_color_dict.get(motif_list[i]):
+        motif_color_dict[motif_list[i]] = motif_colors[i]
+print(motif_color_dict)
+
+# for mot in motif_list:
+#     if motif_color_dict[mot] != motif_color_dict[mot]:
+#         motif_co
+#     c+=1
 
 def oneline_fasta(f):
-    with open(f, "r") as rf, open(w,"w") as wf:
+    with open(f, "r") as rf, open(f'{f}_oneline',"w") as wf:
         seq = ''
         while True:
             line = rf.readline().strip()
@@ -122,6 +136,8 @@ def oneline_fasta(f):
             else:
                 seq += line 
         wf.write(seq)
+        return seq
+
 
 oneline_fasta(f)
 
@@ -168,36 +184,25 @@ class Exon:
 
 
     def exon_draw(self, x, y, start, end, exon_length):
+        print(f'debug Exon: {x=}, {y=}, {x+exon_length=}')
         context.set_line_width(10)
         context.set_source_rgb(0, 0, 0)
         context.move_to(x + start, y)
-        context.line_to(end + exon_length, y)
+        context.line_to(x + end, y)
         context.stroke()
-        context.set_source_rgba(0, 0, 0, 1)
-        
-class Intron:
-    def __init__(self, start, end, gene):
-        self.start = start
-        self.end = end
-        self.gene = gene
-    def intron_draw(self, x, y, intron_length):
-        context.set_line_width(10)
-        context.set_source_rgb(0, 0, 0)
-        context.move_to(x, y)
-        context.line_to(x + intron_length, y)
-        context.stroke()
-        context.set_source_rgba(0, 0, 0, 1)
 
+print(f'*******************{motif_color_dict}')
 
-with open(ol, 'r') as fasta:
+with open(f'{f}_oneline', 'r') as fasta:
     i = 0
     while True:
         header = fasta.readline().split()
-        sequence = fasta.readline().split()
+        sequence = fasta.readline().strip()
+        print(header)
         if (header == []):
             break
         gene_name = header[0][1:]
-        gene_length = len(sequence[0])
+        gene_length = len(sequence)
         #add gene to class
         newgene = Gene(header[0][1:], gene_length)
         print(f'the gene length is: {gene_length}')   
@@ -205,10 +210,11 @@ with open(ol, 'r') as fasta:
         newgene.gene_draw(20, 46+i, header[0][1:], gene_length)
         #extract exon by grabbing all capital letters
         Exon_pattern = re.compile("[AGCT]")
-        exons = Exon_pattern.findall(sequence[0])
+        exons = Exon_pattern.findall(sequence)
         # Find the exon using a regular expression
         exons_string = ''.join(exons)
-        sequence = ''.join(sequence)
+        # sequence = ''.join(sequence)
+        print(exons_string)
         match = re.search('[A-Z]+', sequence)
         if match:
             uppercase_section = match.group()  # Get the uppercase section
@@ -229,20 +235,22 @@ with open(ol, 'r') as fasta:
 
         color_index = 0
         for m in motif_dict:
+            print(m)
             converted_motif = convert_motif(m)
             upper_seq = sequence.upper()
             match_motif = re.finditer(converted_motif, upper_seq)
             
             
-            previous_length = 4
+            # previous_length = 4
             for match in match_motif:
+                print("mmatchgroup")
+                print(match.group())
                 new_motif = Motif(m, motif_dict[m], color_list[color_index], match.start())
-                new_motif.motif_draw(20, 42+i, m, motif_dict[m], match.start(), match.end(), color_list[color_index])
-                if  new_motif.length != previous_length:
-                    color_index += 1
-                    print("doing th thing")
-                previous_length = new_motif.length
-                #print(new_motif.length)
+                print(motif_dict[m])
+                print(f'*******{m}')
+                new_motif.motif_draw(20, 42+i, m, motif_dict[m], match.start(), match.end(), motif_color_dict[m.upper()])
+
+        print(motif_dict)
 
 
         i+=100
