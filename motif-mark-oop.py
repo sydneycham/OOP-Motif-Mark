@@ -6,11 +6,13 @@ import re
 
 
 #set defaults for cairo plotting
-width, height = 1000, 1000
+width, height = 1000, 700
 
 surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
 
 context = cairo.Context(surface)
+context.set_source_rgb(1, 1, 1)
+context.paint()
 
 
 # Set up variables for legend
@@ -226,4 +228,4 @@ with open(f'{f}_oneline', 'r') as fasta:
                 new_motif.motif_draw(20, 42+i, m, motif_dict[m], match.start(), match.end(), motif_color_dict[m.upper()])
         i+=100
 
-surface.write_to_png("sydney.png")
+surface.write_to_png(f'{f}.png')
