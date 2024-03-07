@@ -6,7 +6,7 @@ import re
 
 
 #set defaults for cairo plotting
-width, height = 1000, 700
+width, height = 1000, 1000
 
 surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
 
