@@ -21,29 +21,7 @@ legend_y = 450
 legend_spacing = 20
 legend_font_size = 12
 
-# Define legend labels and colors
-legend_items = [("ygcy", (255, 0, 0)),
-                ("GCAUG", (0, 255, 0)),   
-                ("catag", (0, 0, 255)),
-                ("YYYYYYYYYY", (0, 102, 102)),
-                ("Exon", (0, 0, 0)),]   
 
-# Draw legend
-for label, color in legend_items:
-    # Draw colored square
-    context.set_source_rgb(*color)
-    context.rectangle(legend_x, legend_y, 10, 10)
-    context.fill()
-
-    # Draw legend label
-    context.set_source_rgb(0, 0, 0)  # Set text color to black
-    context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-    context.set_font_size(legend_font_size)
-    context.move_to(legend_x + 15, legend_y + 8)
-    context.show_text(label)
-
-    # Move to the next legend item
-    legend_y += legend_spacing
 
 # Save the surface to a PNG file
 surface.write_to_png("legend.png")
@@ -60,6 +38,8 @@ args = get_args()
 f=args.fasta
 m=args.motif
 
+
+#making motif regular expresssion dictionary
 motif_reg_dict = {}
 motif_reg_dict = {
         "A" : "[A]",
@@ -80,20 +60,19 @@ motif_reg_dict = {
         "N" : "[ACGT]",
     }
 
+#making color list and motif dictionary to coincide with the color
 color_list = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 102, 102), (153, 0, 153)]
 motif_color_dict = {}
 
-
-
-
 def convert_motif(string): 
+    '''this function takes a string and converts it to a regular expression to be used later on to find motifs in the sequence'''
     string = string.upper()
     verted_motif = ""
     for x in string: 
         verted_motif+=motif_reg_dict[x]
     return(verted_motif)
     
-
+#adding length to a motif_dict and creating a motif list
 motif_dict = {}
 motif_list = []
 with open(m, "r") as motifs:
@@ -106,13 +85,40 @@ with open(m, "r") as motifs:
 
 motif_colors = color_list[0:len(motif_list)]
 
-
+#assmebling the motif color dictionary
 for i in range(0,len(motif_list)):
     if not motif_color_dict.get(motif_list[i]):
         motif_color_dict[motif_list[i]] = motif_colors[i]
 
+motif_color_dict["Exon"] = (0,0,0)
+
+# Define legend labels and colors
+legend_items = [("ygcy", (255, 0, 0)),
+                ("GCAUG", (0, 255, 0)),   
+                ("catag", (0, 0, 255)),
+                ("YYYYYYYYYY", (0, 102, 102)),
+                ("Exon", (0, 0, 0)),]   
+
+# Draw legend
+for label, color in motif_color_dict.items():
+    # Draw colored square
+    context.set_source_rgb(*color)
+    context.rectangle(legend_x, legend_y, 10, 10)
+    context.fill()
+
+    # Draw legend label
+    context.set_source_rgb(0, 0, 0)  # Set text color to black
+    context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+    context.set_font_size(legend_font_size)
+    context.move_to(legend_x + 15, legend_y + 8)
+    context.show_text(label)
+
+    # Move to the next legend item
+    legend_y += legend_spacing
+
 
 def oneline_fasta(f):
+    '''this function takes the input fasta file and converts the sequence line to oneline and strips the new line so it can be searched through in regex more easily'''
     with open(f, "r") as rf, open(f'{f}_oneline',"w") as wf:
         seq = ''
         while True:
@@ -134,6 +140,7 @@ oneline_fasta(f)
 
 
 class Motif:
+    '''this class creates motif objects and draws them'''
     def __init__(self, motif_seq, length, color, start_position):
         self.motif_seq = motif_seq
         self.length = length
@@ -151,6 +158,7 @@ class Motif:
  
 
 class Gene:
+    '''this class creates gene/intron objects and draws them'''
     def __init__(self, name, length):
         self.name = name
         self.length = length
@@ -168,6 +176,7 @@ class Gene:
 
 
 class Exon:
+    '''this class creates exon objects and draws them'''
     def __init__(self, start, end, gene):
         self.start = start
         self.end = end
@@ -181,13 +190,13 @@ class Exon:
         context.line_to(x + end, y)
         context.stroke()
 
-
+#this is the main open 'function' that assmebles all the above and uses them to draw the final picture in png format
 with open(f'{f}_oneline', 'r') as fasta:
     i = 0
     while True:
-        header = fasta.readline().split()
+        header = fasta.readline().split() #grabs the first line of the fasta as a list
         sequence = fasta.readline().strip()
-        if (header == []):
+        if (header == []): #breaks when the list is empty
             break
         gene_name = header[0][1:]
         gene_length = len(sequence)
@@ -198,12 +207,10 @@ with open(f'{f}_oneline', 'r') as fasta:
         #extract exon by grabbing all capital letters
         Exon_pattern = re.compile("[AGCT]")
         exons = Exon_pattern.findall(sequence)
-        # Find the exon using a regular expression
         exons_string = ''.join(exons)
  
         match = re.search('[A-Z]+', sequence)
         if match:
-            uppercase_section = match.group()  # Get the uppercase section
             exon_start = match.start()  # Get the start position of the uppercase section
             exon_end = match.end()
         else:
