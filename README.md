@@ -1,0 +1,1 @@
+This script will take in a fasta formatted file as an argparse input and a motif text file with motifs listed per line into an argparse argument and return a picture of the introns, exons, and motifs labeled with colors, as well as a legend and appropriate labaleing.
