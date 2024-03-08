@@ -249,4 +249,5 @@ with open(f'{f}_oneline', 'r') as fasta:
                 new_motif.motif_draw(20, 42+i, m, motif_dict[m], match.start(), match.end(), motif_color_dict[m.upper()])
         i+=100
 
-surface.write_to_png(f'{f}.png')
+output = f.split(".")[0]
+surface.write_to_png(f'{output}.png')
