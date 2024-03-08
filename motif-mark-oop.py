@@ -1,30 +1,12 @@
 #!/usr/bin/env python
+
+#Author: Sydney Hamilton
+#Collaborators: Tam Ho, Anna Grace Welch
+
 from __future__ import annotations
 import cairo 
 import argparse
 import re
-
-
-#set defaults for cairo plotting
-width, height = 1000, 1000
-
-surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
-
-context = cairo.Context(surface)
-context.set_source_rgb(1, 1, 1)
-context.paint()
-
-
-# Set up variables for legend
-legend_x = 50
-legend_y = 450
-legend_spacing = 20
-legend_font_size = 12
-
-
-
-# Save the surface to a PNG file
-surface.write_to_png("legend.png")
 
 
 def get_args():
@@ -38,6 +20,42 @@ args = get_args()
 f=args.fasta
 m=args.motif
 
+def oneline_fasta(f):
+    '''this function takes the input fasta file and converts the sequence line to oneline and strips the new line so it can be searched through in regex more easily'''
+    with open(f, "r") as rf, open(f'{f}_oneline',"w") as wf:
+        seq = ''
+        while True:
+            line = rf.readline().strip()
+            if not line:
+                break
+            if line.startswith(">"):
+                if seq != "":
+                    wf.write(seq + "\n") 
+                seq = ''
+                wf.write(line + "\n") 
+            else:
+                seq += line 
+        wf.write(seq)
+        return seq
+
+
+oneline_fasta(f)
+
+#open fasta file and scale heights and width values
+with open(f'{f}_oneline', 'r') as fasta:
+    i = 0
+    lengths = []
+    scaled_height = 100
+    while True:
+        header = fasta.readline().split() #grabs the first line of the fasta as a list
+        sequence = fasta.readline().strip()
+        if (header == []): #breaks when the list is empty
+            break
+        gene_name = header[0][1:]
+        gene_length = len(sequence)
+        lengths.append(len(sequence))
+        scaled_height +=100
+scaled_width = max(lengths)
 
 #making motif regular expresssion dictionary
 motif_reg_dict = {}
@@ -92,12 +110,26 @@ for i in range(0,len(motif_list)):
 
 motif_color_dict["Exon"] = (0,0,0)
 
-# Define legend labels and colors
-legend_items = [("ygcy", (255, 0, 0)),
-                ("GCAUG", (0, 255, 0)),   
-                ("catag", (0, 0, 255)),
-                ("YYYYYYYYYY", (0, 102, 102)),
-                ("Exon", (0, 0, 0)),]   
+
+#set defaults for cairo plotting
+width, height = scaled_width+50, scaled_height+50
+
+surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, gene_length+50, height)
+
+context = cairo.Context(surface)
+context.set_source_rgb(1, 1, 1)
+context.paint()
+
+
+# Set up variables for legend
+legend_x = 50
+legend_y = scaled_height - 50
+legend_spacing = 20
+legend_font_size = 12
+
+# Save the surface to a PNG file
+surface.write_to_png("legend.png")
+
 
 # Draw legend
 for label, color in motif_color_dict.items():
@@ -114,29 +146,11 @@ for label, color in motif_color_dict.items():
     context.show_text(label)
 
     # Move to the next legend item
+    legend_spacing = 20
     legend_y += legend_spacing
 
 
-def oneline_fasta(f):
-    '''this function takes the input fasta file and converts the sequence line to oneline and strips the new line so it can be searched through in regex more easily'''
-    with open(f, "r") as rf, open(f'{f}_oneline',"w") as wf:
-        seq = ''
-        while True:
-            line = rf.readline().strip()
-            if not line:
-                break
-            if line.startswith(">"):
-                if seq != "":
-                    wf.write(seq + "\n") 
-                seq = ''
-                wf.write(line + "\n") 
-            else:
-                seq += line 
-        wf.write(seq)
-        return seq
 
-
-oneline_fasta(f)
 
 
 class Motif:
